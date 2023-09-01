@@ -1,0 +1,61 @@
+class LabelVideo {
+
+  // Start a Video Labeling Task
+  static void labelVideo(
+      String formattedInstructionName,
+      String formattedAnnotationSpecSetName,
+      String formattedDatasetName)
+      throws IOException {
+    // String formattedInstructionName = DataLabelingServiceClient.formatInstructionName(
+    //      "YOUR_PROJECT_ID", "YOUR_INSTRUCTION_UUID");
+    // String formattedAnnotationSpecSetName =
+    //     DataLabelingServiceClient.formatAnnotationSpecSetName(
+    //         "YOUR_PROJECT_ID", "YOUR_ANNOTATION_SPEC_SET_UUID");
+    // String formattedDatasetName = DataLabelingServiceClient.formatDatasetName(
+    //      "YOUR_PROJECT_ID", "YOUR_DATASET_UUID");
+
+    DataLabelingServiceSettings settings =
+        DataLabelingServiceSettings.newBuilder()
+            .build();
+    try (DataLabelingServiceClient dataLabelingServiceClient =
+        DataLabelingServiceClient.create(settings)) {
+      HumanAnnotationConfig humanAnnotationConfig =
+          HumanAnnotationConfig.newBuilder()
+              .setAnnotatedDatasetDisplayName("annotated_displayname")
+              .setAnnotatedDatasetDescription("annotated_description")
+              .setInstruction(formattedInstructionName)
+              .build();
+
+      AnnotationSpecSetConfig annotationSpecSetConfig =
+          AnnotationSpecSetConfig.newBuilder()
+              .setAnnotationSpecSet(formattedAnnotationSpecSetName)
+              .setAllowMultiLabel(true)
+              .build();
+
+      VideoClassificationConfig videoClassificationConfig =
+          VideoClassificationConfig.newBuilder()
+              .setApplyShotDetection(true)
+              .addAnnotationSpecSetConfigs(annotationSpecSetConfig)
+              .build();
+
+      LabelVideoRequest labelVideoRequest =
+          LabelVideoRequest.newBuilder()
+              .setParent(formattedDatasetName)
+              .setBasicConfig(humanAnnotationConfig)
+              .setVideoClassificationConfig(videoClassificationConfig)
+              .setFeature(Feature.CLASSIFICATION)
+              .build();
+
+      OperationFuture<AnnotatedDataset, LabelOperationMetadata> operation =
+          dataLabelingServiceClient.labelVideoAsync(labelVideoRequest);
+
+      // You'll want to save this for later to retrieve your completed operation.
+      System.out.format("Operation Name: %s\n", operation.getName());
+
+      // Cancel the operation to avoid charges when testing.
+      dataLabelingServiceClient.getOperationsClient().cancelOperation(operation.getName());
+    } catch (IOException | InterruptedException | ExecutionException e) {
+      e.printStackTrace();
+    }
+  }
+}
